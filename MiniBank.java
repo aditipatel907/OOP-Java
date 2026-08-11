@@ -10,14 +10,13 @@ enum MenuOption {
     EXIT
 }
 
-// ---------------- Customer Class ----------------
 class Customer {
 
     private String name;
     private String email;
     private String mobile;
     private final String customerId;
-
+    private Address address;
     private static long customerCounter = 101;
 
     private static String generateCustomerId() {
@@ -46,24 +45,52 @@ class Customer {
     public String getCustomerId() {
         return customerId;
     }
+
+    public void Cloneable(){
+        Customer clonedCust = new Customer(this.name, this.email, this.mobile);
+    }
+    
+    public static class Address{
+        String line;
+        String city;
+        String pincode;
+
+        String getLine() {
+            return line;
+        }
+
+        String getCity() {
+            return city;
+        }
+
+        String getPincode() {
+            return pincode;
+        }
+    }
+    public String getAddress() {
+        if (address != null) {
+            return address.getLine() + ", " + address.getCity() + " - " + address.getPincode();
+        }
+        return "Address not set";
+    }
 }
 
 class Account {
 
-    private final String accountNumber;
-    private String ownerName;
+    private final String accNum;
+    private String owner;
     private long balance;
     private boolean active;
 
-    private static int accountCounter = 1;
+    private static int accCount = 1;
 
     private static String generateAccountNumber() {
-        return String.format("AC%04d", accountCounter++);
+        return String.format("AC%04d", accCount++);
     }
 
     public Account(String ownerName, long openingBalance) {
-        this.accountNumber = generateAccountNumber();
-        this.ownerName = ownerName;
+        this.accNum = generateAccountNumber();
+        this.owner = ownerName;
         this.balance = openingBalance;
         this.active = true;
     }
@@ -87,11 +114,11 @@ class Account {
     }
 
     public String getAccountNumber() {
-        return accountNumber;
+        return accNum;
     }
 
     public String getOwnerName() {
-        return ownerName;
+        return owner;
     }
 
     public long getBalance() {
@@ -101,93 +128,137 @@ class Account {
     public boolean isActive() {
         return active;
     }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "accountNumber='" + accNum + '\'' +
+                ", ownerName='" + owner  + '\'' +
+                ", balance=" + balance +
+                ", active=" + active +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        Account account = (Account) obj;
+
+        return accNum.equals(account.accNum);
+    }
+
+    @Override
+    public int hashCode() {
+        return accNum.hashCode();
+    }
 }
 
 public class MiniBank {
 
     public static void main(String[] args) {
 
-        Scanner sc = new Scanner(System.in);
+    Scanner input = new Scanner(System.in);
 
-        BankInfo bank = new BankInfo("MiniBank", "Vadodara");
+    BankInfo bank = new BankInfo("MiniBank", "Vadodara");
 
-        System.out.println("==================================");
-        System.out.println("Welcome to " + bank.name());
-        System.out.println("Branch : " + bank.branch());
-        System.out.println("==================================");
+    System.out.println("==================================");
+    System.out.println("Welcome to " + bank.name());
+    System.out.println("Branch : " + bank.branch());
+    System.out.println("==================================");
 
-        Customer c1 = new Customer("Aditi", "aditi@gmail.com", "9876543210");
-        Customer c2 = new Customer("Rahul", "rahul@gmail.com", "9876501234");
-        Customer c3 = new Customer("Priya", "priya@gmail.com", "9123456780");
+    Customer c1 = new Customer("Aditi", "aditi@gmail.com", "9876543210");
+    Customer c2 = new Customer("Rahul", "rahul@gmail.com", "9876501234");
+    Customer c3 = new Customer("Priya", "priya@gmail.com", "9123456780");
 
-        Account[] accounts = new Account[3];
+    Account[] accounts = new Account[3];
 
-        accounts[0] = new Account(c1.getName(), 5000);
-        accounts[1] = new Account(c2.getName());
-        accounts[2] = new Account(c3.getName(), 10000);
+    accounts[0] = new Account(c1.getName(), 5000);
+    accounts[1] = new Account(c2.getName());
+    accounts[2] = new Account(c3.getName(), 10000);
 
-        accounts[0].deposit(1000);
-        accounts[1].deposit(2000);
+    accounts[0].deposit(1000);
+    accounts[1].deposit(2000);
 
-        accounts[0].withdraw(1500);
-        accounts[2].withdraw(3000);
+    accounts[0].withdraw(1500);
+    accounts[2].withdraw(3000);
 
-        System.out.println("\nAccount Details");
+    System.out.println("\nAccount Details");
 
-        for (Account acc : accounts) {
-            System.out.println("---------------------------");
-            System.out.println("Account Number : " + acc.getAccountNumber());
-            System.out.println("Owner Name     : " + acc.getOwnerName());
-            System.out.println("Balance        : ₹" + acc.getBalance());
-        }
+    for (Account acc : accounts) {
+        System.out.println("---------------------------");
+        System.out.println(acc.toString());
+    }
 
-        // Menu
-        int choice = 0;
+    System.out.println("\nComparing Accounts");
 
-        while (choice != 5) {
+    System.out.println("Account 1 equals Account 2: "
+            + accounts[0].equals(accounts[1]));
 
-            System.out.println("\nMENU");
-            System.out.println("1. Open Account");
-            System.out.println("2. Deposit");
-            System.out.println("3. Withdraw");
-            System.out.println("4. Transfer");
-            System.out.println("5. Exit");
+    System.out.println("Account 1 equals Account 1: "
+            + accounts[0].equals(accounts[0]));
 
-            System.out.print("Enter your choice: ");
-            choice = sc.nextInt();
+    // Using instanceof
+    System.out.println("\nType Checking");
 
-            switch (choice) {
+    if (accounts[0] instanceof Account) {
+        System.out.println("accounts[0] is an Account object.");
+    }
 
-                case 1 -> {
-                    MenuOption option = MenuOption.OPEN_ACCOUNT;
-                    System.out.println(option + " - To be implemented in a later lab.");
-                }
+    if (c1 instanceof Customer) {
+        System.out.println("c1 is a Customer object.");
+    } else {
+        System.out.println("c1 is not a Customer object.");
+    }
 
-                case 2 -> {
-                    MenuOption option = MenuOption.DEPOSIT;
-                    System.out.println(option + " - To be implemented in a later lab.");
-                }
+    // Menu
+    int choice = 0;
 
-                case 3 -> {
-                    MenuOption option = MenuOption.WITHDRAW;
-                    System.out.println(option + " - To be implemented in a later lab.");
-                }
+    while (choice != 5) {
 
-                case 4 -> {
-                    MenuOption option = MenuOption.TRANSFER;
-                    System.out.println(option + " - To be implemented in a later lab.");
-                }
+        System.out.println("\nMENU");
+        System.out.println("1. Open Account");
+        System.out.println("2. Deposit");
+        System.out.println("3. Withdraw");
+        System.out.println("4. Transfer");
+        System.out.println("5. Exit");
 
-                case 5 -> {
-                    System.out.println("Thank you for using " + bank.name() + "!");
-                }
+        System.out.print("Enter your choice: ");
+        choice = input.nextInt();
 
-                default -> {
-                    System.out.println("Invalid choice! Please try again.");
-                }
+        switch (choice) {
+
+            case 1 -> {
+                MenuOption option = MenuOption.OPEN_ACCOUNT;
+                System.out.println(option + " - To be implemented in a later lab.");
+            }
+
+            case 2 -> {
+                MenuOption option = MenuOption.DEPOSIT;
+                System.out.println(option + " - To be implemented in a later lab.");
+            }
+
+            case 3 -> {
+                MenuOption option = MenuOption.WITHDRAW;
+                System.out.println(option + " - To be implemented in a later lab.");
+            }
+
+            case 4 -> {
+                MenuOption option = MenuOption.TRANSFER;
+                System.out.println(option + " - To be implemented in a later lab.");
+            }
+
+            case 5 -> {
+                System.out.println("Thank you for using " + bank.name() + "!");
+            }
+
+            default -> {
+                System.out.println("Invalid choice! Please try again.");
             }
         }
-
-        sc.close();
     }
+
+    input.close();
+}
 }
