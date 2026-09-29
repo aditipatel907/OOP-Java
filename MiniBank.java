@@ -1,6 +1,7 @@
 import java.util.Scanner;
 
 record BankInfo(String name, String branch) {}
+record Command(TransactionType type, String accountNumber, long amount){}
 
 enum MenuOption {
     OPEN_ACCOUNT,
@@ -8,6 +9,90 @@ enum MenuOption {
     WITHDRAW,
     TRANSFER,
     EXIT
+}
+
+enum TransactionType{
+    DEPOSIT,
+    WITHDRAW,
+    TRANSFER
+}
+
+interface Transactable {
+
+    void deposit(long amount);
+
+    boolean withdraw(long amount);
+}
+
+interface InterestBearing {
+
+    double interestRate();
+
+    default double yearlyInterest() {
+        return getBalance() * interestRate();
+    }
+
+    long getBalance();
+}
+
+@FunctionalInterface
+interface WithdrawRule {
+
+    boolean allow(Account account, long amount);
+}
+
+class CommandParser {
+
+
+    public static Command parse(String line){
+        String[] parts = line.split(" ");
+
+        TransactionType operation = TransactionType.valueOf(parts[0]);
+        String accountNumber = parts[1];
+        long amount = Long.parseLong(parts[2]);
+
+        return new Command(operation, accountNumber, amount);
+    }
+}
+
+class StatementFormatter{
+
+    public static String buildStatement(Account account){
+        StringBuilder statement = new StringBuilder();
+
+        statement.append("==== ACCOUNT STATEMENT ====");
+        statement.append("Account number: ");
+        statement.append(account.getAccountNumber());
+        statement.append("\n");
+
+        statement.append("Owner: ");
+        statement.append(account.getOwnerName());
+        statement.append("\n");
+
+        statement.append("Balance: ");
+        statement.append(account.getBalance());
+        statement.append("\n");
+
+        return statement.toString();
+    }
+}
+
+class Validator{
+    public static boolean isValidEmail(String email) {
+        return email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    public static boolean isValidMobile(String mobile) {
+        return mobile.matches("^[6-9]\\d{9}$");
+    }
+
+    public static boolean isValidPan(String pan){
+        return pan.matches("[A-Z]{3}[PCFHAT][A-Z][0-9]{4}[A-Z]$");
+    }
+
+    public static boolean isValidIfsc(String ifsc){
+        return ifsc.matches("[A-Z]{4}[0][A-Z0-9]{6}$");
+    }
 }
 
 class Customer {
@@ -49,7 +134,7 @@ class Customer {
     public void Cloneable(){
         Customer clonedCust = new Customer(this.name, this.email, this.mobile);
     }
-    
+
     public static class Address{
         String line;
         String city;
@@ -67,6 +152,7 @@ class Customer {
             return pincode;
         }
     }
+
     public String getAddress() {
         if (address != null) {
             return address.getLine() + ", " + address.getCity() + " - " + address.getPincode();
@@ -75,7 +161,7 @@ class Customer {
     }
 }
 
-class Account {
+class Account implements Transactable, InterestBearing {
 
     private final String accNum;
     private String owner;
@@ -99,10 +185,12 @@ class Account {
         this(ownerName, 0);
     }
 
+    @Override
     public void deposit(long amount) {
         balance += amount;
     }
 
+    @Override
     public boolean withdraw(long amount) {
 
         if (balance >= amount) {
@@ -125,6 +213,12 @@ class Account {
         return balance;
     }
 
+    // Added for InterestBearing
+    @Override
+    public double interestRate() {
+        return 0.05;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -132,10 +226,10 @@ class Account {
     @Override
     public String toString() {
         return "Account{" +
-                "accountNumber='" + accNum + '\'' +
-                ", ownerName='" + owner  + '\'' +
-                ", balance=" + balance +
-                ", active=" + active +
+                "Account Number ='" + accNum + '\'' +
+                ", Owner =" + owner  + '\'' +
+                ", Balance = " + balance +
+                ", Active = " + active +
                 '}';
     }
 
@@ -159,106 +253,104 @@ public class MiniBank {
 
     public static void main(String[] args) {
 
-    Scanner input = new Scanner(System.in);
+        Scanner input = new Scanner(System.in);
 
-    BankInfo bank = new BankInfo("MiniBank", "Vadodara");
+        BankInfo bank = new BankInfo("MiniBank", "Vadodara");
 
-    System.out.println("==================================");
-    System.out.println("Welcome to " + bank.name());
-    System.out.println("Branch : " + bank.branch());
-    System.out.println("==================================");
+        System.out.println("==================================\n");
+        System.out.println("Welcome to " + bank.name());
+        System.out.println("Branch : " + bank.branch());
+        System.out.println("\n==================================\n");
 
-    Customer c1 = new Customer("Aditi", "aditi@gmail.com", "9876543210");
-    Customer c2 = new Customer("Rahul", "rahul@gmail.com", "9876501234");
-    Customer c3 = new Customer("Priya", "priya@gmail.com", "9123456780");
 
-    Account[] accounts = new Account[3];
+        // Requirement 3 - Anonymous class
 
-    accounts[0] = new Account(c1.getName(), 5000);
-    accounts[1] = new Account(c2.getName());
-    accounts[2] = new Account(c3.getName(), 10000);
+        Account account = new Account("Aditi", 10000);
 
-    accounts[0].deposit(1000);
-    accounts[1].deposit(2000);
+        WithdrawRule rule1 = new WithdrawRule() {
 
-    accounts[0].withdraw(1500);
-    accounts[2].withdraw(3000);
-
-    System.out.println("\nAccount Details");
-
-    for (Account acc : accounts) {
-        System.out.println("---------------------------");
-        System.out.println(acc.toString());
-    }
-
-    System.out.println("\nComparing Accounts");
-
-    System.out.println("Account 1 equals Account 2: "
-            + accounts[0].equals(accounts[1]));
-
-    System.out.println("Account 1 equals Account 1: "
-            + accounts[0].equals(accounts[0]));
-
-    // Using instanceof
-    System.out.println("\nType Checking");
-
-    if (accounts[0] instanceof Account) {
-        System.out.println("accounts[0] is an Account object.");
-    }
-
-    if (c1 instanceof Customer) {
-        System.out.println("c1 is a Customer object.");
-    } else {
-        System.out.println("c1 is not a Customer object.");
-    }
-
-    // Menu
-    int choice = 0;
-
-    while (choice != 5) {
-
-        System.out.println("\nMENU");
-        System.out.println("1. Open Account");
-        System.out.println("2. Deposit");
-        System.out.println("3. Withdraw");
-        System.out.println("4. Transfer");
-        System.out.println("5. Exit");
-
-        System.out.print("Enter your choice: ");
-        choice = input.nextInt();
-
-        switch (choice) {
-
-            case 1 -> {
-                MenuOption option = MenuOption.OPEN_ACCOUNT;
-                System.out.println(option + " - To be implemented in a later lab.");
+            @Override
+            public boolean allow(Account account, long amount) {
+                return account.getBalance() >= amount;
             }
+        };
 
-            case 2 -> {
-                MenuOption option = MenuOption.DEPOSIT;
-                System.out.println(option + " - To be implemented in a later lab.");
-            }
+        System.out.println("Anonymous class result: "
+                + rule1.allow(account, 5000));
 
-            case 3 -> {
-                MenuOption option = MenuOption.WITHDRAW;
-                System.out.println(option + " - To be implemented in a later lab.");
-            }
 
-            case 4 -> {
-                MenuOption option = MenuOption.TRANSFER;
-                System.out.println(option + " - To be implemented in a later lab.");
-            }
 
-            case 5 -> {
-                System.out.println("Thank you for using " + bank.name() + "!");
-            }
+        WithdrawRule rule2 =
+                (account1, amount) -> account1.getBalance() >= amount;
 
-            default -> {
-                System.out.println("Invalid choice! Please try again.");
+        System.out.println("Lambda result: "
+                + rule2.allow(account, 12000));
+
+
+        System.out.println("Yearly interest: "
+                + account.yearlyInterest());
+
+
+        int choice = 0;
+
+        while (choice != 5) {
+
+            System.out.println("\nMENU");
+            System.out.println("1. Open Account");
+            System.out.println("2. Deposit");
+            System.out.println("3. Withdraw");
+            System.out.println("4. Transfer");
+            System.out.println("5. Exit");
+
+            System.out.println("\nVALIDATION TESTS");
+
+            System.out.println("Mobile: " + Validator.isValidMobile("9876543210")
+                    + " / " + Validator.isValidMobile("12345"));
+
+            System.out.println("Email: " + Validator.isValidEmail("aditi@gmail.com")
+                    + " / " + Validator.isValidEmail("aditi@gmail"));
+
+            System.out.println("PAN: " + Validator.isValidPan("ABCPD1234E")
+                    + " / " + Validator.isValidPan("ABC123"));
+
+            System.out.println("IFSC: " + Validator.isValidIfsc("SBIN0123456")
+                    + " / " + Validator.isValidIfsc("ABC123"));
+
+            System.out.print("Enter your choice: ");
+            choice = input.nextInt();
+
+            switch (choice) {
+
+                case 1 -> {
+                    MenuOption option = MenuOption.OPEN_ACCOUNT;
+                    System.out.println(option + " - To be implemented in a later lab.");
+                }
+
+                case 2 -> {
+                    MenuOption option = MenuOption.DEPOSIT;
+                    System.out.println(option + " - To be implemented in a later lab.");
+                }
+
+                case 3 -> {
+                    MenuOption option = MenuOption.WITHDRAW;
+                    System.out.println(option + " - To be implemented in a later lab.");
+                }
+
+                case 4 -> {
+                    MenuOption option = MenuOption.TRANSFER;
+                    System.out.println(option + " - To be implemented in a later lab.");
+                }
+
+                case 5 -> {
+                    System.out.println("Thank you for using " + bank.name() + "!");
+                }
+
+                default -> {
+                    System.out.println("Invalid choice! Please try again.");
+                }
             }
         }
-    }
 
-    input.close();
-}
+        input.close();
+    }
 }
